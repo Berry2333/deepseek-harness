@@ -1337,6 +1337,10 @@ async function main(): Promise<void> {
   publishUpdate(updateState)
 }
 
+// ARM Linux GPU drivers on domestic hardware corrupt glyph rendering under hardware acceleration.
+// Applied here rather than on the development command line so packaged launches get it too.
+if (process.platform === 'linux') app.commandLine.appendSwitch('disable-gpu')
+
 const ownsDesktopInstance = claimDesktopSingleInstance(app, () => { focusPrimaryWindow() })
 
 if (ownsDesktopInstance) void app.whenReady().then(main).catch(async (error: unknown) => {

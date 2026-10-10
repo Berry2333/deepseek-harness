@@ -116,6 +116,6 @@ describe('desktop auto-update environment', () => {
     expect(desktopUpdateMetadataFilename('1.2.3-alpha.4', 'darwin')).toBe('nightly-mac.yml')
     expect(desktopUpdateMetadataFilename('1.2.3-beta.2', 'win32')).toBe('nightly.yml')
     expect(() => desktopUpdateMetadataFilename('not-semver', 'darwin')).toThrow(/invalid Desktop version/u)
-    expect(() => desktopUpdateMetadataFilename('1.2.3', 'linux')).toThrow(/unsupported metadata platform/u)
+    expect(desktopUpdateMetadataFilename('1.2.3', 'linux')).toBe('nightly-linux.yml')
   })
 })

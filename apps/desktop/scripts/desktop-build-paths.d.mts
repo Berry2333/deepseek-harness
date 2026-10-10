@@ -43,9 +43,16 @@ export function desktopTargetBuildPaths(target: DesktopAutoUpdateTarget): Deskto
  * @returns Platform and architecture of the prepared payload.
  */
 export function desktopTargetPlatform(target: DesktopAutoUpdateTarget): {
-  readonly platform: 'darwin' | 'win32'
+  readonly platform: 'darwin' | 'win32' | 'linux'
   readonly arch: 'arm64' | 'x64'
 }
+
+/**
+ * Return the executable one platform's Electron archive extracts to.
+ * @param platform - Platform of the prepared payload.
+ * @returns Executable path relative to an extracted Electron distribution.
+ */
+export function electronExecutableRelativePath(platform: 'darwin' | 'win32' | 'linux'): string
 
 /**
  * Resolve the paths owned by the target selected in a packaging environment.

@@ -18,12 +18,20 @@ export const DESKTOP_BUILD_DIRTY_ENV = 'DSH_DESKTOP_BUILD_DIRTY'
 /**
  * Read the checkout's current commit and whether it carries uncommitted changes.
  * @param {string} repositoryRoot - Directory to inspect.
- * @returns {{ commit: string, dirty: boolean }} The commit being packaged and whether its tree was modified.
+ * @returns {{ commit: string, dirty: boolean } | undefined} The commit being packaged and whether its tree was modified, or undefined when the sources carry no git history.
  */
 export function readDesktopBuildCommit(repositoryRoot) {
-  const git = (args) => execFileSync('git', args, { cwd: repositoryRoot, encoding: 'utf8' }).trim()
+  const git = (args) => execFileSync('git', args, { cwd: repositoryRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  let commit
+  try {
+    commit = git(['rev-parse', 'HEAD'])
+  }
+  catch {
+    // A source archive has no history to name, and every consumer already omits an absent commit.
+    return undefined
+  }
   return {
-    commit: git(['rev-parse', 'HEAD']),
+    commit,
     dirty: git(['status', '--porcelain', '--untracked-files=normal']) !== '',
   }
 }

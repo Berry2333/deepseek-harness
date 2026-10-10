@@ -60,7 +60,9 @@ export function createElectronBuilderConfig(
   const unsigned = env.DSH_DESKTOP_UNSIGNED === '1'
   const packagesMacOS = targetPlatform === 'darwin' || (targetPlatform === undefined && hostPlatform === 'darwin')
   const packagesWindows = resolvedPlatform === 'win32'
-  const policy = packagesMacOS && unsigned ? undefined : resolveDesktopPolicyEnvironment(env)
+  // The mandatory-update policy queries a DeepSeek service the shell implements for Windows and macOS
+  // only, so a Linux payload ships without it and disables policy queries at launch.
+  const policy = (packagesMacOS && unsigned) || resolvedPlatform === 'linux' ? undefined : resolveDesktopPolicyEnvironment(env)
   if (resolvedPlatform === 'win32') installWindowsDirectoryInstaller()
   const macOSSigning = packagesMacOS && !unsigned ? resolveMacOSSigningEnvironment(env) : undefined
   if (packagesMacOS && !unsigned) resolveMacOSNotarizationEnvironment(env)
@@ -89,7 +91,8 @@ export function createElectronBuilderConfig(
   if (windowsSigner !== undefined) {
     installWindowsNsisBootstrapSigner({ sign: windowsSigner })
   }
-  const update = unsigned ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
+  // Linux AppImages are distributed unsigned with no update feed, so no updater configuration is read.
+  const update = unsigned || resolvedPlatform === 'linux' ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
   if (preparedRuntime !== undefined) buildPaths.dsh = preparedRuntime
   // electron-builder merges extraMetadata into the packaged manifest, so a build version here reaches
   // the artifact names, the update feed, and the installed app.getVersion() the updater compares against.
@@ -109,7 +112,11 @@ export function createElectronBuilderConfig(
     // Unsigned builds carry their own suffix so a shared file can never pass for a release artifact.
     artifactName: `deepseek-harness-\${version}-\${os}-\${arch}${unsigned ? '-unsigned' : ''}.\${ext}`,
     directories: { output: unsigned ? buildPaths.unsignedArtifacts : buildPaths.artifacts },
-    asar: true,
+    // Linux ships no native Office engine, so the kit selects its WASM fallback through an
+    // `lstatSync` probe that Electron's asar filesystem answers with `null` where Node answers
+    // `undefined`. Every archived path therefore reads as an installed engine and the fallback is
+    // refused, so a Linux payload carries its resources as a plain directory instead.
+    asar: resolvedPlatform !== 'linux',
     electronDist: buildPaths.electron,
     electronFuses: { runAsNode: true },
     beforeBuild: async () => {
@@ -232,6 +239,8 @@ export function createElectronBuilderConfig(
     },
     linux: {
       category: 'Development',
+      // Without this the executable takes the scoped package name, `@deepseek-ai!dsh-desktop`.
+      executableName: 'deepseek-harness',
       target: ['AppImage'],
     },
     nsis: {

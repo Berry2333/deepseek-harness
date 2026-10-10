@@ -13,9 +13,9 @@ export const DESKTOP_BUILD_DIRTY_ENV: 'DSH_DESKTOP_BUILD_DIRTY'
 /**
  * Read the checkout's current commit and whether it carries uncommitted changes.
  * @param repositoryRoot - Directory to inspect.
- * @returns The commit being packaged and whether its tree was modified.
+ * @returns The commit being packaged and whether its tree was modified, or undefined when the sources carry no git history.
  */
-export function readDesktopBuildCommit(repositoryRoot: string): DesktopBuildCommit
+export function readDesktopBuildCommit(repositoryRoot: string): DesktopBuildCommit | undefined
 
 /**
  * Resolve the commit a parent packaging process recorded.

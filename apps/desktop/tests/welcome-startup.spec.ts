@@ -64,6 +64,7 @@ vi.mock('electron', () => ({
     on: (name: string, callback: (...args: unknown[]) => void) => { state.appListeners.set(name, callback) },
     quit: state.quit,
     exit: vi.fn(),
+    commandLine: { appendSwitch: vi.fn() },
   },
   powerMonitor: { on: vi.fn(), off: vi.fn() },
   BrowserWindow: class {

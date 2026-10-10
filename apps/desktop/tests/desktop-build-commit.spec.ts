@@ -42,8 +42,14 @@ describe('desktop build commit', () => {
 
   it('reads the checkout this repository is in', () => {
     const packaged = readDesktopBuildCommit(join(import.meta.dirname, '..', '..', '..'))
-    expect(packaged.commit).toMatch(/^[0-9a-f]{40}$/u)
-    expect(typeof packaged.dirty).toBe('boolean')
+    expect(packaged?.commit).toMatch(/^[0-9a-f]{40}$/u)
+    expect(typeof packaged?.dirty).toBe('boolean')
+  })
+
+  it('reads nothing from sources that carry no git history', async () => {
+    const archive = await mkdtemp(join(tmpdir(), 'dsh-no-history-'))
+    directories.push(archive)
+    expect(readDesktopBuildCommit(archive)).toBeUndefined()
   })
 })
 

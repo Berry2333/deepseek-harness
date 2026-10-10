@@ -17,15 +17,31 @@ import { validateDesktopBuildVersion } from './desktop-build-version.mjs'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
 const REPOSITORY_ROOT = resolve(APP_ROOT, '..', '..')
+
+/** Release targets that publish an update feed; a Linux artifact is distributed without one. */
+type DesktopUploadTargetName = Exclude<DesktopPackageTargetName, 'linux-arm64'>
+
 const TARGETS = {
   'mac-arm64': { platform: 'darwin', arch: 'arm64', os: 'mac' },
   'mac-x64': { platform: 'darwin', arch: 'x64', os: 'mac' },
   'win-x64': { platform: 'win32', arch: 'x64', os: 'win' },
-} as const satisfies Record<DesktopPackageTargetName, {
+} as const satisfies Record<DesktopUploadTargetName, {
   readonly platform: NodeJS.Platform
   readonly arch: string
   readonly os: string
 }>
+
+/**
+ * Reject a target that has no update feed to publish.
+ * @param targetName Fixed platform and architecture selected by the upload command.
+ * @returns The same name, once it is known to name an uploadable target.
+ */
+function uploadTargetName(targetName: DesktopPackageTargetName): DesktopUploadTargetName {
+  if (targetName === 'linux-arm64') {
+    throw new Error('desktop upload: a Linux artifact is distributed without an update feed')
+  }
+  return targetName
+}
 
 /** One local file and its final object metadata. */
 export interface DesktopUploadArtifact {
@@ -180,10 +196,8 @@ export async function createDesktopUploadPlan(
   targetName: DesktopPackageTargetName,
   options: DesktopUploadPlanOptions = {},
 ): Promise<DesktopUploadPlan> {
-  const target = TARGETS[targetName]
-  if (target === undefined) {
-    throw new Error(`desktop upload: unsupported target ${String(targetName)}`)
-  }
+  const name = uploadTargetName(targetName)
+  const target = TARGETS[name]
   const environment = options.environment ?? process.env
   const repositoryRoot = options.repositoryRoot ?? REPOSITORY_ROOT
   const appRoot = options.appRoot ?? APP_ROOT
