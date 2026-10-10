@@ -38,6 +38,12 @@ type BoundStreamOpener = (
 export type RemoteStreamFailureMapper = (error: unknown) => RemoteStreamFailure
 
 const MAX_MISSED_HEARTBEATS = 2
+/**
+ * Non-empty Ping payload. An empty one makes `ws` write a zero-length Buffer,
+ * and a zero-length socket write returns EFAULT on Linux kernels that validate
+ * the iovec even when its length is zero, destroying the connection.
+ */
+const HEARTBEAT_PING_PAYLOAD = Buffer.from([0])
 
 /** Own the no-server WebSocket acceptor and every active logical stream. */
 export class RemoteStreamMuxServer {
@@ -117,7 +123,7 @@ export class RemoteStreamMuxServer {
           continue
         }
         this.missedHeartbeats.set(socket, missed + 1)
-        socket.ping()
+        socket.ping(HEARTBEAT_PING_PAYLOAD)
       }
     }, this.heartbeatIntervalMs)
     this.heartbeatTimer.unref()
